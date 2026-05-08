@@ -1,0 +1,29 @@
+# Binaries
+nogo
+
+# Environment / secrets
+nogo.env
+
+# Go
+*.o
+*.a
+*.exe
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test / coverage
+*.test
+*.out
+coverage.html
+
+# Project planning docs (not part of nogo source)
+101-onboarding.md
+ambition-piliers-valeurs.md
+tech-conception-data-collection.md
