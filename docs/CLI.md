@@ -1,5 +1,41 @@
 # CLI Reference
 
+## `nogo search <query>`
+
+Search pages and databases in the local Notion cache by title.
+
+Performs case-insensitive exact substring matching. Multi-word queries match as a literal string (`nogo search project meeting` finds titles containing `"project meeting"`).
+
+By default, searches all pages and databases, excluding collection rows and template copies. Use `--top` to restrict to top-level items only.
+
+Exits with code 1 when no results match.
+
+### Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--top` | false | Restrict to top-level items only (pages/databases at the workspace root) |
+| `--time` | false | Show last edited time for each result |
+
+### Output
+
+Same tab-separated format as `nogo list`: `TYPE  ID  TITLE` (or `TYPE  ID  LAST_EDITED  TITLE` with `--time`).
+
+### Examples
+
+```bash
+# Search all pages and databases
+nogo search meeting
+
+# Search top-level items only
+nogo search --top design
+
+# Search with timestamps
+nogo search --time roadmap
+```
+
+---
+
 ## `nogo get <url-or-id>`
 
 Fetch a Notion page or database from the local cache and convert it to Markdown.
@@ -68,11 +104,13 @@ On error, prints a descriptive message to stderr and exits with code 1.
 
 List pages and databases from the local Notion cache.
 
+By default, lists all pages and databases, excluding collection rows and template copies. Use `--top` to show only top-level items (at the workspace root).
+
 ### Flags
 
 | Flag | Default | Description |
 |---|---|---|
-| `--all` | false | List all items in the cache, not just top-level ones |
+| `--top` | false | Show top-level items only (pages/databases at the workspace root) |
 | `--time` | false | Show last edited time for each item |
 
 ### Output
@@ -88,11 +126,11 @@ database  d3d26ae5-...-014512d331ec  People
 ### Examples
 
 ```bash
-# Top-level items only
+# All pages and databases
 nogo list
 
-# Everything in the cache (can be thousands)
-nogo list --all
+# Top-level items only
+nogo list --top
 
 # With timestamps
 nogo list --time
@@ -168,15 +206,17 @@ nogo sync
 
 ---
 
-## `nogo refresh [url-or-id]`
+## `nogo refresh <url-or-id>`
 
-Force a cache sync by launching the Notion desktop app, waiting for the cache to update, then quitting Notion.
+Force a cache sync for a specific page by opening it in Notion, waiting for the cache to update, then quitting Notion.
+
+A page ID or URL is **required** — Notion's autosync on launch only syncs recently-accessed content, so refreshing without a target page is unreliable.
 
 ### Arguments
 
 | Arg | Description |
 |---|---|
-| `[url-or-id]` | Optional. A page/database URL or UUID. If given, Notion opens that specific page. If omitted, Notion launches and performs a general sync. |
+| `<url-or-id>` | Required. A Notion page/database URL or UUID (same formats as `get`). |
 
 ### Flags
 
@@ -187,7 +227,7 @@ Force a cache sync by launching the Notion desktop app, waiting for the cache to
 
 ### How it works
 
-1. Opens Notion (via `open -a Notion` or `notion://` URL scheme for specific pages)
+1. Opens the specified page in Notion via `notion://` URL scheme
 2. Polls the `notion.db` file mtime every second until it changes
 3. Quits Notion via AppleScript (`tell application "Notion" to quit`)
 
@@ -196,21 +236,21 @@ Typical cycle time: 3–5 seconds.
 ### Examples
 
 ```bash
-# Sync the whole cache, then quit Notion
-nogo refresh
-
-# Sync a specific page
+# Sync a specific page, then quit Notion
 nogo refresh abc123def456
 
-# Allow more time for large workspaces
-nogo refresh --wait=60
+# Sync using a full URL
+nogo refresh https://www.notion.so/My-Page-abc123def456
+
+# Allow more time for large pages
+nogo refresh abc123def456 --wait=60
 
 # Sync and keep Notion running
-nogo refresh --keep
+nogo refresh abc123def456 --keep
 ```
 
 ### Caveats
 
-- **macOS only.** The `open -a Notion` command and AppleScript quit mechanism are macOS-specific.
+- **macOS only.** The AppleScript quit mechanism is macOS-specific.
 - **Notion must be installed.** nogo uses the Notion desktop app as its sync engine.
 - **The Notion window will briefly appear** during the sync cycle. There is no way to prevent this on macOS.

@@ -33,18 +33,21 @@ _Avoid_: sync (when meaning the user-triggered action), download, fetch (when me
 - `nogo list` reads **Block** and **Collection** tables to enumerate items
 - `nogo get` reads **Block** trees and converts them to Markdown
 - `nogo info` reads **Block** metadata (`last_edited_time`, `created_time`) and **Sync timestamps**
-- `nogo refresh` opens Notion via `notion://` URL scheme and polls the Cache mtime
+- `nogo refresh <page-id>` opens a specific page in Notion via `notion://` URL scheme and polls the Cache mtime; requires a page ID because Notion's autosync without a target page is unreliable
 - `nogo sync` reads `offline_download_metadata` and the Cache file mtime
+- `nogo search` finds **Pages** and **Collections** by title substring match (case-insensitive); excludes collection rows and template copies; mirrors `nogo list` output format
+- `nogo list` and `nogo search` show all items by default (`--top` for top-level only); exclude collection rows (`parent_table='collection'`) and template copies (`copied_from_pointer`) to reduce noise
 
 ## Example dialogue
 
 > **Dev:** "I ran `nogo get` but the page content looks old."
 > **Domain expert:** "Check `nogo info <id>` — compare the **last edited time** against the **sync timestamp** from `nogo sync`. If the sync is older, run `nogo refresh <id>` to force Notion to update the **cache**."
 
-> **Dev:** "Why does `nogo refresh` open Notion? Can't it just call the API?"
-> **Domain expert:** "nogo doesn't use the API — it reads the **cache** directly. Refreshing means getting Notion to sync its cache, which requires the app running."
+> **Dev:** "Why does `nogo refresh` require a page ID? Can't it just refresh everything?"
+> **Domain expert:** "Notion's autosync on launch only syncs recently-accessed content — there's no guarantee a specific stale page gets refreshed. `nogo refresh <id>` opens that exact page, forcing Notion to fetch it."
 
 ## Flagged ambiguities
 
 - "sync" can mean either Notion's internal autosync mechanism or the user running `nogo sync` to check timestamps. Resolved: `nogo sync` is the CLI command; **sync timestamp** is the cache metadata.
 - "database" in Notion means a structured table (a **Collection** in the cache), not a relational database. The cache itself is a SQLite database. Resolved: use **Collection** for Notion databases, **Cache** for the SQLite file.
+- Semantic or LLM-powered search belongs outside nogo. Users can pipe `nogo list` or `nogo search` output into an LLM for fuzzy/semantic matching. Resolved: nogo ships substring search only; no local embedding model or API key.

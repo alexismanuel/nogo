@@ -14,26 +14,22 @@ import (
 var flagWait int
 
 var refreshCmd = &cobra.Command{
-	Use:   "refresh [page-id-or-url]",
-	Short: "Force a cache sync from Notion, then quit Notion",
-	Long: `Launch Notion to trigger a cache sync, then quit it.
+	Use:   "refresh <page-id-or-url>",
+	Short: "Force a cache sync for a specific page from Notion, then quit Notion",
+	Long: `Open a specific Notion page to force a cache sync, then quit Notion.
 
-When run without a page ID, Notion opens briefly, syncs its local
-cache, and then quits. This keeps your cache fresh without leaving
-Notion running.
-
-When given a page ID or URL, Notion opens that page to force a sync
-of that specific content, then quits.
+A page ID or URL is required. Notion opens that page, syncs its content
+to the local cache, and then quits.
 
 Use --wait to set the maximum time to wait (default 30s).
 Use --keep to leave Notion running after sync instead of quitting.
 
 Examples:
-  nogo refresh                                 # sync cache, then quit Notion
-  nogo refresh --wait=60                       # allow up to 60s for sync
   nogo refresh abc123def456                    # sync a specific page, then quit
-  nogo refresh abc123def456 --keep             # sync page, leave Notion running`,
-	Args: cobra.MaximumNArgs(1),
+  nogo refresh abc123def456 --wait=60          # allow up to 60s for sync
+  nogo refresh abc123def456 --keep             # sync page, leave Notion running
+  nogo refresh https://notion.so/Page-abc123def456  # works with full URLs`,
+	Args: cobra.ExactArgs(1),
 	RunE: runRefresh,
 }
 
@@ -49,21 +45,14 @@ func runRefresh(cmd *cobra.Command, args []string) error {
 	// Capture pre-refresh state.
 	beforeDBMod := getDBModTime()
 
-	if len(args) > 0 {
-		objectID, err := notiondesktop.ResolvePageID(args[0])
-		if err != nil {
-			return fmt.Errorf("invalid ID or URL: %w", err)
-		}
-		notionURL := "notion://www.notion.so/" + objectID
-		fmt.Fprintf(os.Stderr, "Opening page in Notion: %s\n", notionURL)
-		if err := openBrowser(notionURL); err != nil {
-			return fmt.Errorf("opening Notion: %w", err)
-		}
-	} else {
-		fmt.Fprintln(os.Stderr, "Launching Notion to sync cache...")
-		if err := launchNotion(); err != nil {
-			return fmt.Errorf("launching Notion: %w", err)
-		}
+	objectID, err := notiondesktop.ResolvePageID(args[0])
+	if err != nil {
+		return fmt.Errorf("invalid ID or URL: %w", err)
+	}
+	notionURL := "notion://www.notion.so/" + objectID
+	fmt.Fprintf(os.Stderr, "Opening page in Notion: %s\n", notionURL)
+	if err := openBrowser(notionURL); err != nil {
+		return fmt.Errorf("opening Notion: %w", err)
 	}
 
 	fmt.Fprintf(os.Stderr, "Waiting up to %ds for cache update...\n", flagWait)
@@ -103,17 +92,6 @@ func pollCacheUpdate(before time.Time, timeout time.Duration) bool {
 		}
 	}
 	return false
-}
-
-func launchNotion() error {
-	switch runtime.GOOS {
-	case "darwin":
-		return exec.Command("open", "-a", "Notion").Start()
-	case "windows":
-		return exec.Command("cmd", "/c", "start", "notion://").Start()
-	default:
-		return exec.Command("notion", "&").Start()
-	}
 }
 
 func quitNotion() {
