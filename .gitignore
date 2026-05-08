@@ -1,13 +1,14 @@
 # Binaries
 nogo
+*.o
+*.a
+*.exe
 
 # Environment / secrets
 nogo.env
 
 # Go
-*.o
-*.a
-*.exe
+go.work
 
 # macOS
 .DS_Store
