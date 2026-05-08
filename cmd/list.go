@@ -10,26 +10,27 @@ import (
 )
 
 var (
-	flagListAll  bool
+	flagListTop  bool
 	flagListTime bool
 )
 
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List pages and databases from the local Notion cache",
-	Long: `List pages and databases available in the Notion desktop SQLite cache.
+	Long: `List all pages and databases available in the Notion desktop SQLite cache.
 
-By default, only top-level items (pages and databases at the root of a
-workspace) are shown. Use --all to include every page in the cache.
+By default, every page and database in the cache is shown. Use --top to
+restrict output to top-level items only (pages and databases at the root of
+a workspace).
 
 Examples:
-  nogo list          # show top-level pages and databases
-  nogo list --all    # show all pages in the cache`,
+  nogo list          # show all pages and databases
+  nogo list --top    # show top-level items only`,
 	RunE: runList,
 }
 
 func init() {
-	listCmd.Flags().BoolVar(&flagListAll, "all", false, "list all pages, not just top-level ones")
+	listCmd.Flags().BoolVar(&flagListTop, "top", false, "show top-level items only")
 	listCmd.Flags().BoolVar(&flagListTime, "time", false, "show last edited time for each item")
 	rootCmd.AddCommand(listCmd)
 }
@@ -41,7 +42,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 	defer reader.Close()
 
-	rows, err := reader.ListPages(flagListAll)
+	rows, err := reader.ListPages(!flagListTop)
 	if err != nil {
 		return err
 	}

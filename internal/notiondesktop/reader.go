@@ -140,12 +140,15 @@ func (r *Reader) Close() error {
 // When all is false, only top-level items (parent_table='space') are returned.
 func (r *Reader) ListPages(all bool) ([]PageEntry, error) {
 	pageQuery := `
-		SELECT id, coalesce(properties, '{}'), coalesce(last_edited_time, 0)
+		SELECT id, coalesce(properties, '{}'), max(coalesce(last_edited_time, 0))
 		FROM block
-		WHERE type = 'page' AND alive = 1`
+		WHERE type = 'page' AND alive = 1
+		AND parent_table NOT IN ('collection')
+		AND json_extract(format, '$.copied_from_pointer') IS NULL`
 	if !all {
 		pageQuery += ` AND parent_table = 'space'`
 	}
+	pageQuery += ` GROUP BY id`
 
 	pageRows, err := r.db.Query(pageQuery)
 	if err != nil {
@@ -175,12 +178,13 @@ func (r *Reader) ListPages(all bool) ([]PageEntry, error) {
 
 	// Fetch database block IDs and their collection titles.
 	dbQuery := `
-		SELECT b.id, coalesce(json_extract(b.format, '$.collection_pointer.id'), ''), coalesce(b.last_edited_time, 0)
+		SELECT b.id, coalesce(json_extract(b.format, '$.collection_pointer.id'), ''), max(coalesce(b.last_edited_time, 0))
 		FROM block b
 		WHERE b.type = 'collection_view_page' AND b.alive = 1`
 	if !all {
 		dbQuery += ` AND b.parent_table = 'space'`
 	}
+	dbQuery += ` GROUP BY b.id`
 
 	dbRows, err := r.db.Query(dbQuery)
 	if err != nil {
