@@ -4,17 +4,41 @@ Zero-config Mac Notion cache reader to Markdown.
 
 ## Install
 
+From source:
+
 ```bash
-go install .
+go install github.com/alexismanuel/nogo@latest
+```
+
+This puts `nogo` in `$(go env GOPATH)/bin` (usually `~/go/bin`). Make sure that's on your `$PATH`.
+
+Or clone and build:
+
+```bash
+git clone https://github.com/alexismanuel/nogo.git
+cd nogo
+make install
 ```
 
 ## Quick start
 
 ```bash
-nogo list                          # list pages from cache
-nogo get <url-or-id> --stdout     # fetch a page as Markdown
-nogo info <url-or-id>             # check page metadata + freshness
-nogo refresh                       # sync cache (launches Notion, then quits)
+# Discover what's in your cache
+nogo list
+nogo list --time                    # with last-edited timestamps
+
+# Fetch a page as Markdown
+nogo get abc123def456 --stdout
+nogo get https://www.notion.so/My-Page-abc123def456 -o page.md
+
+# Check if cached content is fresh
+nogo info abc123def456
+
+# Refresh a single page — opens Notion, syncs that page, quits
+nogo refresh abc123def456
+
+# Refresh the whole cache
+nogo refresh
 ```
 
 ## Documentation

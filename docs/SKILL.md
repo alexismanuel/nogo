@@ -29,8 +29,13 @@ nogo list --time          # With last-edited timestamps
 
 ```bash
 nogo info <url-or-id>    # Page metadata + cache sync timestamps
-nogo sync                 # Cache-wide sync timestamps
+nogo sync                 # Cache-wide sync timestamps:
+                          #   DB modified    — when notion.db was last written (most reliable)
+                          #   Last auto-sync — when Notion last ran incremental sync
+                          #   Last refetch   — when Notion last did full re-download
 ```
+
+If `Last auto-sync` is older than a page's `Last edited`, the cache is stale.
 
 ### Force a cache sync
 

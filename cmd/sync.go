@@ -10,9 +10,14 @@ import (
 var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Show when the local Notion cache was last synced",
-	Long: `Show freshness information about the local Notion desktop cache.
-Reports the last auto-sync, last full refetch, and DB file modification
-time so you can decide whether cached data is recent enough.
+	Long: `Show three timestamps from Notion's local cache:
+
+  DB modified    — when notion.db was last written to (most reliable signal)
+  Last auto-sync — when Notion last ran an incremental sync
+  Last refetch   — when Notion last did a full data re-download
+
+Compare Last auto-sync against a page's Last edited (nogo info) to judge
+staleness. If auto-sync is older, the cache is stale — run nogo refresh.
 
 Examples:
   nogo sync`,

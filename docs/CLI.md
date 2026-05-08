@@ -136,7 +136,21 @@ Compare `Last edited` (remote) against `Last auto-sync` (local) to judge stalene
 
 ## `nogo sync`
 
-Show when the local Notion cache was last synced. No arguments.
+Show when the local Notion cache was last synced. No arguments, no network.
+
+Reads three timestamps from Notion's local SQLite cache:
+
+| Field | Source | Meaning |
+|---|---|---|
+| **DB modified** | File mtime of `notion.db` | Wall-clock time the cache was last written to. The most reliable "something changed" signal. |
+| **Last auto-sync** | `offline_download_metadata` (`autosync`) | When Notion last ran an incremental sync — downloaded changed blocks since the last sync. |
+| **Last refetch** | `offline_download_metadata` (`refetch`) | When Notion last performed a full re-download of workspace data. |
+
+### How to use it
+
+Compare **Last auto-sync** against a page's **Last edited** time (from `nogo info`) to judge staleness. If auto-sync is older than the page edit, the cache is stale — run `nogo refresh`.
+
+If **DB modified** is recent but auto-sync is old, Notion may have synced partially (e.g. only pages you opened).
 
 ### Output
 
@@ -146,12 +160,9 @@ Last auto-sync: 2026-05-08T10:53:27Z
 Last refetch:   2026-05-08T10:57:32Z
 ```
 
-This reads from the `offline_download_metadata` table inside the cache, plus the file mtime.
-
 ### Examples
 
 ```bash
-# Quick check — is the cache fresh?
 nogo sync
 ```
 
